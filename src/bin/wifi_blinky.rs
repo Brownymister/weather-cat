@@ -9,7 +9,7 @@ use cyw43_pio::PioSpi;
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
-use embassy_rp::gpio::{Level, Output};
+use embassy_rp::gpio::{Level, Output, Input};
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_time::{Duration, Timer};
@@ -28,15 +28,8 @@ async fn wifi_task(runner: cyw43::Runner<'static, Output<'static>, PioSpi<'stati
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-    let fw = include_bytes!("../../../../cyw43-firmware/43439A0.bin");
-    let clm = include_bytes!("../../../../cyw43-firmware/43439A0_clm.bin");
-
-    // To make flashing faster for development, you may want to flash the firmwares independently
-    // at hardcoded addresses, instead of baking them into the program with `include_bytes!`:
-    //     probe-rs download 43439A0.bin --format bin --chip RP2040 --base-address 0x10100000
-    //     probe-rs download 43439A0_clm.bin --format bin --chip RP2040 --base-address 0x10140000
-    //let fw = unsafe { core::slice::from_raw_parts(0x10100000 as *const u8, 230321) };
-    //let clm = unsafe { core::slice::from_raw_parts(0x10140000 as *const u8, 4752) };
+    let fw = include_bytes!("../../../embassy/cyw43-firmware/43439A0.bin");
+    let clm = include_bytes!("../../../embassy/cyw43-firmware/43439A0_clm.bin");
 
     let pwr = Output::new(p.PIN_23, Level::Low);
     let cs = Output::new(p.PIN_25, Level::High);
@@ -55,7 +48,8 @@ async fn main(spawner: Spawner) {
 
     let mut led_pin = Output::new(p.PIN_13, Level::Low);
 
-    let delay = Duration::from_secs(1);
+    // let delay = Duration::from_hz(700);
+    let delay = Duration::from_millis(50);
     loop {
         info!("led on!");
         control.gpio_set(0, true).await;
